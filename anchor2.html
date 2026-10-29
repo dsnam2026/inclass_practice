@@ -1,1 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mystery Booth: The Missing Trophy</title>
+<style>
+:root{--bg:#120d2b;--panel:#241a5e;--panel2:#31267a;--line:#4a3aa8;--gold:#ffd23f;--gold2:#c99a00;--teal:#2de2c9;--teal2:#14a190;--pink:#ff5d8f;--pink2:#b3254f;--text:#f6f3ff;--muted:#bdb4ee}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"Trebuchet MS","Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--text);background:radial-gradient(circle at 50% -10%,#3b2a99 0,var(--bg) 62%) fixed;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(2px 2px at 20px 30px,#fff8,transparent),radial-gradient(2px 2px at 120px 90px,#fff7,transparent),radial-gradient(1.5px 1.5px at 200px 20px,#fff8,transparent);background-size:240px 140px;animation:twinkle 3s ease-in-out infinite alternate}
+/* animated background */
+#bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#bg span{position:absolute;bottom:-60px;opacity:.18;animation:drift linear infinite}
+.blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;animation:blob 14s ease-in-out infinite alternate}
+.b1{left:-20vmax;top:-10vmax;background:radial-gradient(circle,#7b5cff55,transparent 65%)}
+.b2{right:-25vmax;bottom:-15vmax;background:radial-gradient(circle,#2de2c944,transparent 65%);animation-delay:-6s}
+#app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:0 12px 40px}
+#hud{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 -12px 14px;background:#120d2bee;border-bottom:3px solid var(--line);backdrop-filter:blur(4px)}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 10px;font-weight:800;font-size:14px;white-space:nowrap}
+.stat small{display:block;font-size:9px;color:var(--muted);letter-spacing:1px}
+.stat.bump{animation:bump .35s}
+#combo.hot{display:inline-block;animation:flick .5s ease-in-out infinite alternate}
+#pips{display:flex;gap:6px;flex:1;justify-content:center;min-width:130px}
+.pip{width:24px;height:24px;border-radius:50%;background:var(--panel);border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--muted)}
+.pip.on{background:var(--gold);color:#241a00;border-color:#fff;animation:pippulse 1.2s ease-in-out infinite}
+.pip.done{background:var(--teal);color:#06332d;border-color:var(--teal2);animation:okpop .5s}
+.tg{cursor:pointer;font:inherit;font-size:15px;font-weight:800;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:4px 10px;color:var(--text)}
+.tg.on{background:var(--teal);color:#06332d;border-color:#fff}
+.tg:active{transform:scale(.92)}
+/* panel + staggered entrance */
+.panel{background:linear-gradient(180deg,var(--panel),#1b1450);border:3px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 8px 0 #0c0826,0 18px 30px #0008;animation:pop .4s cubic-bezier(.2,1.2,.3,1)}
+.panel>*{animation:rise .55s cubic-bezier(.2,.9,.3,1.2) both}
+.panel>*:nth-child(2){animation-delay:.07s}.panel>*:nth-child(3){animation-delay:.14s}.panel>*:nth-child(4){animation-delay:.21s}.panel>*:nth-child(5){animation-delay:.28s}.panel>*:nth-child(6){animation-delay:.35s}.panel>*:nth-child(7){animation-delay:.42s}.panel>*:nth-child(8){animation-delay:.49s}
+.mission{text-align:center;margin-bottom:14px}
+.badge{display:inline-block;background:var(--pink);color:#fff;font-weight:900;font-size:12px;letter-spacing:2px;padding:3px 12px;border-radius:99px;box-shadow:0 3px 0 var(--pink2);animation:badgepulse 2s ease-in-out infinite}
+.mission h2{font-size:24px;margin:8px 0 4px;color:var(--gold);text-shadow:0 3px 0 #0006}
+.mission p{color:var(--muted);font-size:15px}
+/* buttons */
+.btn{--sh:var(--gold2);position:relative;font:inherit;font-weight:800;border:0;border-radius:16px;padding:12px 22px;cursor:pointer;color:#241a00;background:var(--gold);box-shadow:0 5px 0 var(--sh);transition:transform .08s,box-shadow .08s}
+.btn::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(100deg,transparent 35%,#ffffff88 50%,transparent 65%);background-size:250% 100%;background-position:150% 0;animation:shine 3s ease-in-out infinite}
+.btn.big::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:ring 1.7s ease-out infinite}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--sh)}
+.btn.big{font-size:20px;padding:14px 30px}
+.btn.teal{--sh:var(--teal2);background:var(--teal);color:#06332d}
+.btn.ghost{--sh:#1a1244;background:var(--panel2);color:var(--text)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled::after,.btn:disabled::before{display:none}
+.nextbar{text-align:center;margin-top:18px;animation:bouncein .6s cubic-bezier(.2,1.4,.3,1) both}
+.collect{display:flex;align-items:center;gap:10px;margin-top:16px;font-weight:800;font-size:14px}
+.meter{flex:1;height:16px;background:#0d0827;border:2px solid var(--line);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;transition:width .5s cubic-bezier(.2,1.3,.3,1);background:repeating-linear-gradient(45deg,#ffffff33 0 10px,transparent 10px 20px),linear-gradient(90deg,var(--teal),var(--gold));background-size:28px 28px,100% 100%;animation:stripes 1s linear infinite}
+/* speaker buttons (TTS) */
+.sp{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex-shrink:0;cursor:pointer;user-select:none;background:var(--gold);color:#241a00;border-radius:99px;min-width:30px;height:30px;padding:0 8px;font-size:14px;font-weight:900;box-shadow:0 3px 0 var(--gold2);transition:transform .1s;vertical-align:middle}
+.sp i{font-style:normal;font-size:11px}
+.sp:hover{transform:scale(1.12)}
+.sp:active{transform:translateY(2px)}
+.sp.speaking{background:var(--teal);box-shadow:0 3px 0 var(--teal2);animation:speak .6s ease-in-out infinite}
+.btn.speaking{animation:speak .6s ease-in-out infinite}
+body.nots .sp,body.nots #auto{display:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:var(--panel2);border:3px solid var(--gold);padding:10px 16px;border-radius:14px;font-weight:800;animation:toast 2.4s forwards}
+/* title */
+.hero{text-align:center}
+.logo{position:relative;display:inline-block;font-size:64px;animation:rise .55s both,bob 2s ease-in-out .6s infinite}
+.mag{position:absolute;left:50%;top:50%;margin:-16px 0 0 -16px;font-size:32px;animation:orbit 4s linear infinite}
+.hero h1{font-size:36px;line-height:1.1;color:var(--gold);text-shadow:0 4px 0 #0007,0 0 24px #ffd23f66;letter-spacing:1px}
+.wave span{display:inline-block;animation:wave 1.8s ease-in-out infinite}
+.wave .gap{width:.35em;animation:none}
+.hero h3{color:var(--teal);margin:6px 0 14px}
+.story{background:#0d0827aa;border:2px dashed var(--line);border-radius:16px;padding:14px;text-align:left;line-height:1.55;margin-bottom:14px}
+.story b{color:var(--gold)}
+.story .sp{margin-top:8px}
+.quest{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:18px}
+.quest div{background:var(--panel2);border-radius:12px;padding:8px;font-size:13px;font-weight:700;animation:bouncein .6s both}
+.quest div:nth-child(1){animation-delay:.3s}.quest div:nth-child(2){animation-delay:.4s}.quest div:nth-child(3){animation-delay:.5s}.quest div:nth-child(4){animation-delay:.6s}.quest div:nth-child(5){animation-delay:.7s}
+.quest span{display:block;color:var(--muted);font-size:11px;font-weight:600}
+/* flip cards */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:620px){.cards{grid-template-columns:repeat(3,1fr)}.card{height:290px}}
+.card{perspective:900px;height:320px;cursor:pointer;animation:cardin .6s cubic-bezier(.2,1.3,.3,1) both,floaty 3.2s ease-in-out infinite;animation-delay:var(--d),calc(var(--d) + .6s)}
+.inner{position:relative;display:block;width:100%;height:100%;transition:transform .6s cubic-bezier(.4,1.3,.5,1);transform-style:preserve-3d}
+.card.flip .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:18px;border:3px solid var(--line);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.front{background:linear-gradient(160deg,#3a2c92,#2a1f78);box-shadow:0 5px 0 #0c0826}
+.card:hover .front{filter:brightness(1.18)}
+.card.got .front{border-color:var(--teal)}
+.front .em{font-size:48px;animation:bob 2.4s ease-in-out infinite}
+.front .ex{font-size:19px;font-weight:900;color:var(--gold)}
+.front .hint{font-size:11px;color:var(--muted)}
+.back{background:linear-gradient(160deg,#17306e,#1b4d7c);transform:rotateY(180deg);text-align:center;border-color:var(--teal);box-shadow:0 5px 0 #0c0826}
+.back .ko{font-size:15px;font-weight:900;color:var(--gold)}
+.back .en{font-size:12px;color:#dff;line-height:1.35}
+.back .sent{font-size:12.5px;background:#0006;border-radius:10px;padding:7px;line-height:1.4}
+.sprow{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+mark{background:none;color:var(--gold);font-weight:900;border-bottom:3px solid var(--gold)}
+/* match */
+.match{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
+.col{display:flex;flex-direction:column;gap:10px}
+.mbtn{display:flex;align-items:center;gap:8px;color:var(--text);background:var(--panel2);border:3px solid var(--line);border-radius:14px;padding:10px;min-height:68px;cursor:pointer;text-align:left;box-shadow:0 4px 0 #0c0826;transition:border-color .15s,background .15s;animation:slidein .5s cubic-bezier(.2,1.2,.3,1) both;animation-delay:var(--d)}
+.mbtn.ex{justify-content:center;font-weight:900;font-size:16px;color:var(--gold);text-align:center;--from:40px}
+.mbtn.def{--from:-40px}
+.mbtn b{flex:1;font-size:13.5px;line-height:1.35}
+.mbtn:hover{border-color:#8f7cff}
+.mbtn.sel{border-color:var(--gold);box-shadow:0 7px 0 #0c0826,0 0 16px #ffd23f88;animation:wig .6s ease-in-out infinite}
+.mbtn.ok{border-color:var(--teal);background:#0d5e55;cursor:default;animation:okpop .55s}
+.mbtn.bad{border-color:var(--pink);background:#6b1f43}
+/* case file */
+.board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px}
+.slot{aspect-ratio:1;max-height:52px;border-radius:12px;background:#0d0827;border:2px solid var(--line);display:grid;place-items:center;font-size:20px}
+.slot.on{background:var(--teal);border-color:#fff}
+.slot.pop{animation:unlock .7s cubic-bezier(.2,1.3,.3,1)}
+.note{min-height:46px;background:#fff8d6;color:#3b2d00;border-radius:10px;padding:8px 12px;font-weight:700;font-size:14px;transform:rotate(-.6deg);box-shadow:0 4px 0 #0005;margin-bottom:12px}
+.note.drop{animation:drop .7s cubic-bezier(.2,1.3,.3,1)}
+.qbox{position:relative;background:#0d0827aa;border:2px solid var(--line);border-radius:16px;padding:16px 56px 16px 16px;font-size:19px;line-height:1.55;margin-bottom:6px}
+.qbox .qsp{position:absolute;right:12px;top:12px}
+.blank{display:inline-block;min-width:110px;border-bottom:4px dashed var(--gold);text-align:center;color:var(--gold);font-weight:900;animation:blink 1.2s ease-in-out infinite}
+.blank.filled{border-bottom-style:solid;animation:okpop .55s}
+.kor{color:var(--muted);font-size:13px;margin:6px 2px 12px;min-height:18px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;font-size:16px;font-weight:800;color:var(--text);background:var(--panel2);border:3px solid var(--line);border-radius:14px;padding:14px 8px;cursor:pointer;box-shadow:0 5px 0 #0c0826;animation:slidein .5s cubic-bezier(.2,1.2,.3,1) both;animation-delay:var(--d)}
+.opt:nth-child(odd){--from:-50px}.opt:nth-child(even){--from:50px}
+.opt .ot{flex:1}
+.opt:hover{border-color:#8f7cff}
+.opt:active{transform:translateY(3px)}
+.opt.dead{background:#6b1f43;border-color:var(--pink);opacity:.6;cursor:default}
+.opt.ok{background:#0d5e55;border-color:var(--teal);animation:okpop .6s}
+.opt.dim{opacity:.45}
+/* build */
+.line{min-height:64px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;background:#0d0827aa;border:3px dashed var(--line);border-radius:16px;margin-bottom:14px}
+.line .ph{color:var(--muted);font-size:14px}
+.line .dot{font-size:22px;font-weight:900;color:var(--gold)}
+.pool{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:60px;margin-bottom:14px}
+.chip{font:inherit;font-size:17px;font-weight:800;color:#241a00;background:#fff;border:0;border-radius:12px;padding:9px 14px;cursor:pointer;box-shadow:0 4px 0 #b9b2d8}
+.chip.enter{animation:chipin .5s cubic-bezier(.2,1.5,.3,1) both}
+.chip.in{background:var(--teal);box-shadow:0 4px 0 var(--teal2);color:#06332d}
+.chip.in.new{animation:popin .3s cubic-bezier(.2,1.6,.3,1)}
+.chip:active{transform:translateY(3px)}
+.msg{text-align:center;min-height:26px;font-weight:800;margin-bottom:10px}
+.msg.good{color:var(--teal);animation:okpop .5s}.msg.bad{color:var(--pink)}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+textarea{width:100%;min-height:90px;resize:none;font:inherit;font-size:17px;padding:12px;border-radius:14px;border:3px solid var(--line);background:#0d0827;color:var(--text);outline:none;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
+textarea:focus{border-color:var(--gold);box-shadow:0 0 18px #ffd23f55}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
+.tagx{cursor:pointer;background:var(--panel2);border:2px solid var(--line);border-radius:99px;padding:4px 12px;font-size:13px;font-weight:700;color:var(--gold);animation:bouncein .5s both}
+.tagx:nth-child(2){animation-delay:.1s}.tagx:nth-child(3){animation-delay:.2s}.tagx:nth-child(4){animation-delay:.3s}.tagx:nth-child(5){animation-delay:.4s}.tagx:nth-child(6){animation-delay:.5s}
+.tagx.hit{background:var(--teal);color:#06332d;border-color:#fff;animation:okpop .6s}
+/* result */
+.big-rank{font-size:30px;font-weight:900;color:var(--gold);text-shadow:0 3px 0 #0007;animation:rankin .9s cubic-bezier(.2,1.4,.3,1) .9s both}
+.trophy{display:inline-block;font-size:70px;animation:rise .55s both,trophy 1.6s ease-in-out .6s infinite}
+.stars{font-size:40px;letter-spacing:6px;margin:4px 0}
+.stars span{display:inline-block;animation:starpop .7s cubic-bezier(.2,1.6,.3,1) both}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.sum div{background:var(--panel2);border-radius:14px;padding:10px;font-size:22px;font-weight:900}
+.sum small{display:block;font-size:11px;color:var(--muted)}
+.rep{display:flex;flex-direction:column;gap:8px;text-align:left;margin-bottom:16px}
+.rep div{background:#0d0827aa;border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-size:14px;animation:slidein .5s both;--from:-40px;animation-delay:var(--d)}
+.rep b{color:var(--gold)}
+.rep span.s{float:right}
+.rep em{display:block;color:var(--muted);font-style:normal;font-size:13px;margin-top:4px}
+.rep .sp{height:24px;min-width:24px;font-size:12px;margin-left:4px}
+/* fx */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.p{position:fixed;font-size:22px;animation:burst .9s ease-out forwards}
+.fl{position:fixed;font-weight:900;color:var(--gold);font-size:22px;text-shadow:0 2px 0 #000;animation:flt 1s ease-out forwards}
+.rain{position:fixed;top:-40px;animation:fall linear forwards}
+.splash{position:fixed;inset:0;z-index:45;display:grid;place-items:center;pointer-events:none;background:radial-gradient(circle,#120d2bcc 0,#120d2b00 70%);animation:splfade 1.6s forwards}
+.sin{text-align:center;padding:18px 48px;background:linear-gradient(90deg,transparent,#7b5cffdd 20%,#7b5cffdd 80%,transparent);animation:splin 1.6s cubic-bezier(.2,1.3,.3,1) forwards}
+.sb{font-size:14px;font-weight:900;letter-spacing:6px;color:var(--gold)}
+.st{font-size:34px;font-weight:900;text-shadow:0 4px 0 #0006}
+/* keyframes */
+@keyframes twinkle{from{opacity:.25}to{opacity:.8}}
+@keyframes drift{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(30px,-55vh) rotate(180deg)}100%{transform:translate(-20px,-115vh) rotate(360deg)}}
+@keyframes blob{from{transform:translate(0,0) scale(1)}to{transform:translate(8vmax,6vmax) scale(1.2)}}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bouncein{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes cardin{0%{transform:translateY(40px) rotate(-6deg) scale(.7);opacity:0}100%{transform:none;opacity:1}}
+@keyframes floaty{50%{transform:translateY(-6px)}}
+@keyframes slidein{from{transform:translateX(var(--from,-40px));opacity:0}to{transform:none;opacity:1}}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-6deg)}}
+@keyframes orbit{from{transform:rotate(0) translateX(62px) rotate(0)}to{transform:rotate(360deg) translateX(62px) rotate(-360deg)}}
+@keyframes wave{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-9px)}}
+@keyframes shine{0%,55%{background-position:150% 0}100%{background-position:-50% 0}}
+@keyframes ring{0%{box-shadow:0 0 0 0 #ffd23faa}100%{box-shadow:0 0 0 18px #ffd23f00}}
+@keyframes stripes{to{background-position:28px 0,0 0}}
+@keyframes pippulse{50%{transform:scale(1.3);box-shadow:0 0 14px var(--gold)}}
+@keyframes badgepulse{50%{transform:scale(1.08)}}
+@keyframes bump{40%{transform:scale(1.3);border-color:var(--gold)}}
+@keyframes flick{from{transform:scale(1) rotate(-3deg)}to{transform:scale(1.18) rotate(3deg)}}
+@keyframes speak{50%{transform:scale(1.15)}}
+@keyframes wig{0%,100%{transform:translateY(-3px) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+@keyframes okpop{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes unlock{0%{transform:rotate(0) scale(.4)}60%{transform:rotate(380deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes drop{0%{transform:translateY(-40px) rotate(-8deg);opacity:0}100%{transform:rotate(-.6deg);opacity:1}}
+@keyframes blink{50%{border-bottom-color:transparent}}
+@keyframes chipin{0%{transform:translateY(30px) scale(.4);opacity:0}100%{transform:none;opacity:1}}
+@keyframes popin{0%{transform:scale(.4)}100%{transform:scale(1)}}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.shake{animation:shake .4s !important}
+@keyframes trophy{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(6deg) scale(1.1)}}
+@keyframes starpop{0%{transform:scale(0) rotate(-180deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes rankin{0%{transform:scale(0) rotate(-10deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes burst{from{transform:translate(-50%,-50%) scale(.4);opacity:1}to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.2);opacity:0}}
+@keyframes flt{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-60px);opacity:0}}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@keyframes splfade{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}}
+@keyframes splin{0%{transform:scale(2.5) rotate(-8deg);opacity:0}25%{transform:scale(1) rotate(0);opacity:1}80%{transform:scale(1);opacity:1}100%{transform:scale(.8) translateY(-40px);opacity:0}}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@media(max-width:420px){.mission h2{font-size:20px}.hero h1{font-size:28px}.opt{font-size:14px}.qbox{font-size:17px}.st{font-size:26px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+<div id="bg"><i class="blob b1"></i><i class="blob b2"></i></div>
+<div id="app">
+  <div id="hud">
+    <div class="stat" id="scoreBox"><small>SCORE</small><span id="score">0</span></div>
+    <div class="stat"><small>COMBO</small><span id="combo">-</span></div>
+    <div id="pips"></div>
+    <div class="stat"><small>TIME</small><span id="time">00:00</span></div>
+    <button class="tg" id="auto" title="Auto-read English aloud" aria-label="Auto-read on/off">🗣️ OFF</button>
+    <button class="tg" id="mute" title="Sound effects on/off" aria-label="Sound effects on/off">🔇</button>
+  </div>
+  <main id="view"></main>
+</div>
+<div id="fx"></div>
 
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var view=$('#view'), fx=$('#fx');
+
+/* ---------- DATA ---------- */
+var EXPRS=[
+ {id:'charge',text:'in charge of',emoji:'🕵️',ko:'~을 맡고 있는',def:'to be the leader or manager of something',ex:'Mina is [[in charge of]] the English booth.',re:/\bin charge of\b/i},
+ {id:'part',text:'take part in',emoji:'🙋',ko:'~에 참여하다',def:'to join an activity with other people',ex:'She asked everyone to [[take part in]] a short quiz game.',re:/\b(take|takes|took|taken|taking) part in\b/i},
+ {id:'figure',text:'figure out',emoji:'🧩',ko:'알아내다, 이해하다',def:'to find the answer by thinking',ex:'The team could not [[figure out]] how to make the game fun.',re:/\b(figure|figures|figured|figuring) out\b/i},
+ {id:'work',text:'work on',emoji:'🛠️',ko:'~에 공들이다, 작업하다',def:'to spend time making or improving something',ex:'They decided to [[work on]] a mystery theme.',re:/\b(work|works|worked|working) on\b/i},
+ {id:'cut',text:'cut down on',emoji:'✂️',ko:'~을 줄이다',def:'to use or do less of something',ex:'They decided to [[cut down on]] long instructions.',re:/\b(cut|cuts|cutting) down on\b/i},
+ {id:'diff',text:'make a difference',emoji:'🌟',ko:'변화를 가져오다, 영향을 주다',def:'to have a good effect and change things',ex:'These changes will [[make a difference]] for the students.',re:/\b(make|makes|made|making) a (big |small |real |great )?difference\b/i}
+];
+var CASE=[
+ {id:'charge',q:'Minho is the leader of the radio club. He is ___ all the music for the festival.',o:['in charge of','taking part in','figuring out','cutting down on'],a:0,ko:'민호는 라디오 동아리의 리더예요. 그는 축제의 모든 음악을 맡고 있어요.',clue:'Clue 1: The golden trophy was last seen near the radio booth.'},
+ {id:'part',q:'Our school festival is open to all students. Please ___ the quiz game and have fun with us!',o:['take part in','figure out','cut down on','make a difference'],a:0,ko:'우리 학교 축제는 모든 학생에게 열려 있어요. 퀴즈 게임에 참여해서 함께 즐겨요!',clue:'Clue 2: A note says, "Come to the quiz game at 3:00."'},
+ {id:'figure',q:'The first clue was very hard. Sora needed ten minutes to ___ the answer.',o:['figure out','take part in','cut down on','make a difference'],a:0,ko:'첫 번째 단서는 매우 어려웠어요. 소라는 답을 알아내는 데 10분이 걸렸어요.',clue:'Clue 3: The code on the note opens a small blue box.'},
+ {id:'work',q:'We have only two days left. Let us ___ our booth poster after school.',o:['work on','figure out','cut down on','take part in'],a:0,ko:'이틀밖에 안 남았어요. 방과 후에 우리 부스 포스터를 작업해요.',clue:'Clue 4: Inside the box, there is a poster with a map.'},
+ {id:'cut',q:'Students did not read the long rules. Mina wanted fewer words, so she decided to ___ the rules.',o:['cut down on','work on','figure out','take part in'],a:0,ko:'학생들이 긴 규칙을 읽지 않았어요. 미나는 단어를 줄이고 싶어서 규칙을 줄이기로 했어요.',clue:'Clue 5: The map shows a short path to the English booth.'},
+ {id:'diff',q:'A big, clear sign can ___ for visitors. Now many more people find our booth!',o:['make a difference','work on','cut down on','figure out'],a:0,ko:'크고 분명한 표지판은 방문객에게 큰 차이를 만들 수 있어요. 이제 더 많은 사람이 우리 부스를 찾아요!',clue:'Clue 6: The trophy is under the table at Mina\'s booth. Case closed! 🏆'}
+];
+var BUILD=[
+ {id:'charge',s:'Jisu is in charge of the festival',ko:'지수는 축제를 맡고 있어요.'},
+ {id:'part',s:'Many students took part in the quiz',ko:'많은 학생들이 퀴즈에 참여했어요.'},
+ {id:'figure',s:'We could not figure out the code',ko:'우리는 암호를 알아내지 못했어요.'},
+ {id:'work',s:'We are working on a new game',ko:'우리는 새 게임을 작업하고 있어요.'},
+ {id:'cut',s:'Please cut down on the long rules',ko:'긴 규칙을 줄여 주세요.'},
+ {id:'diff',s:'Small changes can make a difference',ko:'작은 변화도 차이를 만들 수 있어요.'}
+];
+var STORY='Mina is in charge of the English booth at our school festival. Her team made a mystery quiz game, but the golden trophy is missing! Detective, can you find the clues and solve the case?';
+var STAGE_NAMES=['','Clue Cards','Decode','Case File','Rebuild','Bonus'];
+var SPL=['','🗂️|Clue Cards','🔐|Decode','📁|Case File','🧩|Rebuild','✍️|Bonus Clue'];
+
+/* ---------- HELPERS ---------- */
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t}return b}
+function mark(s){return s.replace(/\[\[(.+?)\]\]/g,'<mark>$1</mark>')}
+function plain(s){return s.replace(/\[\[|\]\]/g,'')}
+function hl(s){EXPRS.forEach(function(e){s=s.replace(e.re,function(m){return '<mark>'+m+'</mark>'})});return s}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function pad(n){return (n<10?'0':'')+n}
+function wave(t){return t.split('').map(function(c,i){return c===' '?'<span class="gap"></span>':'<span style="animation-delay:'+(i*.07)+'s">'+c+'</span>'}).join('')}
+function sp(text,label,extra){
+  return '<span class="sp '+(extra||'')+'" role="button" tabindex="0" aria-label="Listen: '+esc(text)+'" data-say="'+esc(text)+'">🔊'+(label?'<i>'+label+'</i>':'')+'</span>';
+}
+
+/* ---------- TEXT-TO-SPEECH ---------- */
+var tts=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window), voice=null, autoRead=false, curEl=null;
+function pickVoice(){
+  if(!tts)return;
+  var v=speechSynthesis.getVoices();
+  voice=v.filter(function(x){return /^en[-_]US/i.test(x.lang)})[0]||v.filter(function(x){return /^en/i.test(x.lang)})[0]||null;
+}
+if(tts){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}else{document.body.classList.add('nots')}
+function toast(msg){
+  var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);
+  setTimeout(function(){t.remove()},2400);
+}
+function speak(text,el,rate){
+  if(!tts){toast('Speech is not supported in this browser.');return}
+  text=String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').replace(/\s+/g,' ').trim();
+  if(!text)return;
+  try{speechSynthesis.cancel()}catch(e){}
+  if(curEl){curEl.classList.remove('speaking');curEl=null}
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang='en-US';if(voice)u.voice=voice;u.rate=rate||0.88;u.pitch=1;
+  if(el){curEl=el}
+  u.onstart=function(){if(el)el.classList.add('speaking')};
+  u.onend=u.onerror=function(){if(el)el.classList.remove('speaking')};
+  speechSynthesis.speak(u);
+}
+function auto(text){if(autoRead)speak(text)}
+/* any element with data-say reads aloud (capture phase: runs before other click handlers) */
+document.addEventListener('click',function(e){
+  var s=e.target.closest('[data-say]');
+  if(!s)return;
+  e.stopPropagation();e.preventDefault();
+  speak(s.getAttribute('data-say'),s);
+},true);
+document.addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('role')==='button'){
+    e.preventDefault();e.target.click();
+  }
+});
+
+/* ---------- STATE ---------- */
+var S, timer=null, muted=true, actx=null, lastScore=0;
+function newState(){
+  S={score:0,combo:0,bestCombo:0,mistakes:0,stage:0,start:0,end:0,miss:{},spl:{}};
+  EXPRS.forEach(function(e){S.miss[e.id]=0});
+}
+function hud(){
+  var sc=$('#score');sc.textContent=S.score;
+  if(S.score!==lastScore){var b=$('#scoreBox');b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');lastScore=S.score}
+  var c=$('#combo');c.textContent=S.combo>1?'🔥 x'+S.combo:'-';c.classList.toggle('hot',S.combo>1);
+}
+function splash(n){
+  var p=SPL[n].split('|'),d=document.createElement('div');
+  d.className='splash';d.innerHTML='<div class="sin"><div class="sb">MISSION '+n+'</div><div class="st">'+p[0]+' '+p[1]+'</div></div>';
+  document.body.appendChild(d);setTimeout(function(){d.remove()},1650);
+}
+function setStage(n){
+  S.stage=n;
+  var h='';
+  for(var i=1;i<=5;i++){h+='<div class="pip '+(i<n?'done':i===n?'on':'')+'" title="'+STAGE_NAMES[i]+'">'+(i<n?'✓':i)+'</div>'}
+  $('#pips').innerHTML=h;
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n>=1&&n<=5&&!S.spl[n]){S.spl[n]=1;splash(n);sfx('whoosh')}
+}
+function award(base,el){
+  S.combo++;if(S.combo>S.bestCombo)S.bestCombo=S.combo;
+  var pts=base+Math.min(S.combo,5)*10;
+  S.score+=pts;hud();float('+'+pts,el);burst(el);sfx('good');
+  return pts;
+}
+function penalty(id){S.miss[id]++;S.mistakes++;S.combo=0;hud();sfx('bad')}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
+
+/* ---------- SOUND & FX ---------- */
+function tone(f,d,type,vol,delay){
+  if(muted)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    var o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+(delay||0);
+    o.type=type||'sine';o.frequency.value=f;o.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(vol||.07,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.start(t);o.stop(t+d);
+  }catch(e){}
+}
+function sfx(k){
+  if(k==='good'){tone(660,.12,'triangle',.08,0);tone(880,.18,'triangle',.08,.1)}
+  else if(k==='bad'){tone(180,.25,'sawtooth',.06,0)}
+  else if(k==='flip'){tone(520,.08,'square',.04,0)}
+  else if(k==='whoosh'){tone(300,.25,'sine',.05,0);tone(600,.2,'sine',.04,.1)}
+  else if(k==='win'){[523,659,784,1047].forEach(function(f,i){tone(f,.2,'triangle',.08,i*.12)})}
+  else{tone(440,.06,'square',.04,0)}
+}
+function pos(el){
+  if(!el)return {x:innerWidth/2,y:innerHeight/2};
+  var r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};
+}
+function burst(el){
+  var p=pos(el),icons=['⭐','✨','🔎','💎','🎉'];
+  for(var i=0;i<14;i++){
+    var s=document.createElement('span');s.className='p';s.textContent=icons[i%icons.length];
+    s.style.left=p.x+'px';s.style.top=p.y+'px';
+    var a=Math.random()*6.283,d=50+Math.random()*100;
+    s.style.setProperty('--dx',Math.cos(a)*d+'px');s.style.setProperty('--dy',(Math.sin(a)*d-30)+'px');
+    fx.appendChild(s);(function(n){setTimeout(function(){n.remove()},950)})(s);
+  }
+}
+function float(text,el){
+  var p=pos(el),s=document.createElement('span');s.className='fl';s.textContent=text;
+  s.style.left=p.x+'px';s.style.top=(p.y-10)+'px';fx.appendChild(s);
+  setTimeout(function(){s.remove()},1000);
+}
+function rain(n){
+  var icons=['🎉','⭐','✨','🏆','🔎','💎','🎊'];
+  for(var i=0;i<n;i++){(function(i){
+    setTimeout(function(){
+      var s=document.createElement('span');s.className='rain';s.textContent=icons[i%icons.length];
+      s.style.left=Math.random()*100+'vw';s.style.animationDuration=(2+Math.random()*2)+'s';s.style.fontSize=(18+Math.random()*18)+'px';
+      fx.appendChild(s);setTimeout(function(){s.remove()},4300);
+    },i*90);
+  })(i)}
+}
+function countUp(el,to,ms){
+  var st=null;
+  function f(t){if(!st)st=t;var p=Math.min(1,(t-st)/ms);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)}
+  requestAnimationFrame(f);
+}
+function buildBg(){
+  var bg=$('#bg'),ic=['🔍','🗝️','🕵️','⭐','🏆','❓','📜','💡'];
+  for(var i=0;i<16;i++){
+    var s=document.createElement('span');s.textContent=ic[i%ic.length];
+    s.style.left=(Math.random()*100)+'%';s.style.fontSize=(16+Math.random()*26)+'px';
+    s.style.animationDuration=(14+Math.random()*16)+'s';s.style.animationDelay=(-Math.random()*20)+'s';
+    bg.appendChild(s);
+  }
+}
+function nextBar(label,fn){
+  var panel=view.querySelector('.panel'),d=document.createElement('div');
+  d.className='nextbar';d.innerHTML='<button class="btn big" id="goNext">'+label+'</button>';
+  panel.appendChild(d);
+  $('#goNext').onclick=function(){sfx('click');fn()};
+  sfx('win');d.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function meter(id,txt,done,total){
+  $('#m'+id).style.width=(done/total*100)+'%';$('#c'+id).textContent=done+' / '+total+' '+txt;
+}
+
+/* ---------- TITLE ---------- */
+function title(){
+  newState();hud();
+  $('#pips').innerHTML='';$('#time').textContent='00:00';
+  clearInterval(timer);
+  view.innerHTML=
+  '<section class="panel hero">'+
+   '<div class="logo">🕵️<span class="mag">🔍</span></div>'+
+   '<h1 class="wave">'+wave('MYSTERY BOOTH')+'</h1><h3>The Case of the Missing Trophy</h3>'+
+   '<div class="story"><b>Mina</b> is <b>in charge of</b> the English booth at our school festival. Her team made a mystery quiz game, but the golden trophy is <b>missing</b>! 🏆<br>Detective, can you find the clues and solve the case?<br>'+sp(STORY,'Listen to the story')+'</div>'+
+   '<div class="quest">'+
+    '<div>🗂️ 1. Clue Cards<span>learn 6 phrases</span></div>'+
+    '<div>🔐 2. Decode<span>match meanings</span></div>'+
+    '<div>📁 3. Case File<span>fill the blanks</span></div>'+
+    '<div>🧩 4. Rebuild<span>make sentences</span></div>'+
+    '<div>✍️ 5. Bonus Clue<span>write your own</span></div>'+
+   '</div>'+
+   '<button class="btn big" id="start">START THE CASE ▶</button>'+
+   '<p style="color:var(--muted);font-size:12px;margin-top:12px">⏱️ About 10 minutes · Tap 🔊 anywhere to hear English · 🗣️ = auto-read · 🔇 = sound effects (OFF)</p>'+
+  '</section>';
+  $('#start').onclick=function(){
+    sfx('win');S.start=Date.now();
+    timer=setInterval(function(){
+      if(!S.start||S.end)return;
+      var t=Math.floor((Date.now()-S.start)/1000);
+      $('#time').textContent=pad(Math.floor(t/60))+':'+pad(t%60);
+    },1000);
+    stage1();
+  };
+}
+
+/* ---------- STAGE 1: CLUE CARDS ---------- */
+function stage1(){
+  setStage(1);
+  var seen={},count=0;
+  view.innerHTML=
+  '<section class="panel">'+
+   '<div class="mission"><span class="badge">MISSION 1</span><h2>Collect the Clue Cards 🗂️</h2><p>Tap a card to flip it. Tap 🔊 to hear the English!</p></div>'+
+   '<div class="cards">'+EXPRS.map(function(e,i){
+     return '<div class="card" role="button" tabindex="0" data-i="'+i+'" style="--d:'+(i*.1)+'s"><span class="inner">'+
+      '<span class="face front"><span class="em">'+e.emoji+'</span><span class="ex">'+e.text+'</span>'+sp(e.text,'Listen')+'<span class="hint">tap card to flip</span></span>'+
+      '<span class="face back"><span class="ko">'+e.ko+'</span><span class="en">'+e.def+'</span><span class="sent">'+mark(e.ex)+'</span>'+
+       '<span class="sprow">'+sp(e.text,'Word')+sp(e.def,'Meaning')+sp(plain(e.ex),'Example')+'</span></span>'+
+     '</span></div>';
+   }).join('')+'</div>'+
+   '<div class="collect"><div class="meter"><i id="m1"></i></div><span id="c1">0 / 6 collected</span></div>'+
+  '</section>';
+  view.querySelectorAll('.card').forEach(function(c){
+    c.addEventListener('click',function(){
+      c.classList.toggle('flip');sfx('flip');
+      var i=c.dataset.i;
+      if(c.classList.contains('flip'))auto(EXPRS[i].text+'. '+EXPRS[i].def+'. '+plain(EXPRS[i].ex));
+      if(!seen[i]){
+        seen[i]=1;count++;c.classList.add('got');
+        S.score+=20;hud();float('+20',c);burst(c);
+        meter(1,'collected',count,6);
+        if(count===6)nextBar('Mission 2: Decode ▶',stage2);
+      }
+    });
+  });
+}
+
+/* ---------- STAGE 2: DECODE (MATCH) - no Korean ---------- */
+function stage2(){
+  setStage(2);
+  var L=shuffle(EXPRS),R=shuffle(EXPRS),selL=null,selR=null,done=0,busy=false;
+  view.innerHTML=
+  '<section class="panel">'+
+   '<div class="mission"><span class="badge">MISSION 2</span><h2>Decode the Secret Messages 🔐</h2><p>Tap a meaning, then tap the matching phrase. 🔊 reads it aloud.</p></div>'+
+   '<div class="match">'+
+    '<div class="col" id="colL">'+L.map(function(e,i){return '<div class="mbtn def" role="button" tabindex="0" data-id="'+e.id+'" style="--d:'+(i*.07)+'s"><b>'+e.def+'</b>'+sp(e.def)+'</div>'}).join('')+'</div>'+
+    '<div class="col" id="colR">'+R.map(function(e,i){return '<div class="mbtn ex" role="button" tabindex="0" data-id="'+e.id+'" style="--d:'+(i*.07)+'s">'+e.emoji+' '+e.text+sp(e.text)+'</div>'}).join('')+'</div>'+
+   '</div>'+
+   '<div class="collect"><div class="meter"><i id="m2"></i></div><span id="c2">0 / 6 decoded</span></div>'+
+  '</section>';
+  function pick(side,btn){
+    if(busy||btn.classList.contains('ok'))return;
+    sfx('click');
+    if(side==='L'){if(selL)selL.classList.remove('sel');selL=btn;auto(btn.querySelector('b').textContent)}
+    else{if(selR)selR.classList.remove('sel');selR=btn;auto(btn.textContent.replace('🔊','').replace(/^\S+\s/,''))}
+    btn.classList.add('sel');
+    if(selL&&selR)check();
+  }
+  function check(){
+    var a=selL,b=selR;
+    if(a.dataset.id===b.dataset.id){
+      a.classList.remove('sel');b.classList.remove('sel');
+      a.classList.add('ok');b.classList.add('ok');
+      done++;award(100,b);meter(2,'decoded',done,6);
+      selL=selR=null;
+      if(done===6)nextBar('Mission 3: Case File ▶',function(){stage3(0)});
+    }else{
+      busy=true;penalty(a.dataset.id);
+      a.classList.add('bad');b.classList.add('bad');shake(a);shake(b);
+      setTimeout(function(){
+        a.classList.remove('bad','sel');b.classList.remove('bad','sel');
+        selL=selR=null;busy=false;
+      },550);
+    }
+  }
+  $('#colL').addEventListener('click',function(e){var b=e.target.closest('.mbtn');if(b)pick('L',b)});
+  $('#colR').addEventListener('click',function(e){var b=e.target.closest('.mbtn');if(b)pick('R',b)});
+}
+
+/* ---------- STAGE 3: CASE FILE (CLOZE) ---------- */
+var clues=[];
+function stage3(i){
+  setStage(3);
+  if(i===0)clues=[];
+  var q=CASE[i];
+  var slots='';for(var k=0;k<6;k++){slots+='<div class="slot '+(k<clues.length?'on':'')+'">'+(k<clues.length?'🔎':'🔒')+'</div>'}
+  var opts=shuffle(q.o.map(function(t,k){return {t:t,ok:k===q.a}}));
+  var spoken=q.q.replace('___','blank');
+  var lastClue=clues.length?clues[clues.length-1]:'';
+  view.innerHTML=
+  '<section class="panel">'+
+   '<div class="mission"><span class="badge">MISSION 3 · '+(i+1)+'/6</span><h2>Open the Case File 📁</h2><p>Choose the best phrase to unlock the clue.</p></div>'+
+   '<div class="board">'+slots+'</div>'+
+   '<div class="note" id="note"><span id="notet">'+(lastClue||'Your clues will appear here... 🔍')+'</span> <span id="notesp">'+(lastClue?sp(lastClue):'')+'</span></div>'+
+   '<div class="qbox" id="qbox">'+q.q.replace('___','<span class="blank" id="blank">&nbsp;?&nbsp;</span>')+'<span class="qsp" id="qsp">'+sp(spoken)+'</span></div>'+
+   '<div class="kor" id="kor"></div>'+
+   '<div class="opts" id="opts">'+opts.map(function(o,k){return '<div class="opt" role="button" tabindex="0" data-ok="'+(o.ok?1:0)+'" style="--d:'+(k*.08)+'s"><span class="ot">'+o.t+'</span>'+sp(o.t)+'</div>'}).join('')+'</div>'+
+  '</section>';
+  auto(spoken);
+  var locked=false;
+  $('#opts').addEventListener('click',function(e){
+    var b=e.target.closest('.opt');if(!b||locked||b.classList.contains('dead'))return;
+    var txt=b.querySelector('.ot').textContent;
+    if(b.dataset.ok==='1'){
+      locked=true;
+      b.classList.add('ok');
+      view.querySelectorAll('.opt').forEach(function(x){if(x!==b)x.classList.add('dim')});
+      var bl=$('#blank');bl.classList.add('filled');bl.innerHTML='<mark>'+txt+'</mark>';
+      var full=q.q.replace('___',txt);
+      $('#qsp').innerHTML=sp(full);
+      $('#kor').textContent=q.ko;
+      clues.push(q.clue);
+      $('#notet').textContent=q.clue;$('#notesp').innerHTML=sp(q.clue);
+      var nt=$('#note');nt.classList.remove('drop');void nt.offsetWidth;nt.classList.add('drop');
+      var sl=view.querySelectorAll('.slot')[i];sl.className='slot on pop';sl.textContent='🔎';
+      award(120,b);
+      auto(full);
+      nextBar(i<5?'Next Clue ▶':'Mission 4: Rebuild ▶',function(){i<5?stage3(i+1):stage4(0)});
+    }else{
+      b.classList.add('dead');shake(b);penalty(q.id);
+    }
+  });
+}
+
+/* ---------- STAGE 4: REBUILD (UNSCRAMBLE) ---------- */
+function stage4(i){
+  setStage(4);
+  var q=BUILD[i],words=q.s.split(' ');
+  var pool=shuffle(words.map(function(w,k){return {k:k,w:w}}));
+  var guard=0;while(pool.map(function(c){return c.w}).join(' ')===q.s&&guard++<10)pool=shuffle(pool);
+  var ans=[],tries=0,finished=false;
+  view.innerHTML=
+  '<section class="panel">'+
+   '<div class="mission"><span class="badge">MISSION 4 · '+(i+1)+'/6</span><h2>Rebuild the Evidence 🧩</h2><p>Tap the words in the right order. Use 🔊 to check by ear!</p></div>'+
+   '<div class="kor" style="text-align:center;font-size:15px">'+q.ko+'</div>'+
+   '<div class="line" id="line"></div>'+
+   '<div class="pool" id="pool"></div>'+
+   '<div class="msg" id="msg" aria-live="polite"></div>'+
+   '<div class="row"><button class="btn ghost" id="reset">↺ Reset</button><button class="btn ghost" id="say">🔊 Read mine</button><button class="btn teal" id="check">Check ✔</button></div>'+
+  '</section>';
+  function draw(newK,first){
+    $('#line').innerHTML=(ans.length?ans.map(function(c){return '<button class="chip in'+(String(c.k)===String(newK)?' new':'')+'" data-k="'+c.k+'">'+c.w+'</button>'}).join(''):'<span class="ph">Tap the words below</span>')+'<span class="dot">.</span>';
+    $('#pool').innerHTML=pool.filter(function(c){return ans.indexOf(c)<0}).map(function(c,n){return '<button class="chip'+(first?' enter':'')+'" style="animation-delay:'+(n*.06)+'s" data-k="'+c.k+'">'+c.w+'</button>'}).join('');
+  }
+  function find(k){return pool.filter(function(c){return String(c.k)===String(k)})[0]}
+  function say(t,cls){var m=$('#msg');m.textContent=t;m.className='msg '+(cls||'')}
+  function finish(){
+    finished=true;
+    $('#line').innerHTML='<span style="font-size:20px;font-weight:800">'+hl(q.s)+'.</span> '+sp(q.s+'.');
+    $('#pool').innerHTML='';
+    $('#check').disabled=true;$('#reset').disabled=true;
+    $('#say').setAttribute('data-say',q.s);
+    auto(q.s);
+    nextBar(i<5?'Next ▶':'Mission 5: Bonus Clue ▶',function(){i<5?stage4(i+1):stage5()});
+  }
+  $('#pool').addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b||finished)return;
+    var c=find(b.dataset.k);ans.push(c);sfx('click');say('');auto(c.w);draw(c.k);
+  });
+  $('#line').addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b||finished)return;
+    var c=find(b.dataset.k);ans.splice(ans.indexOf(c),1);sfx('click');draw();
+  });
+  $('#reset').onclick=function(){ans=[];say('');draw()};
+  $('#say').onclick=function(){
+    if(!ans.length){toast('Tap some words first! 🙂');return}
+    speak(ans.map(function(c){return c.w}).join(' '),this);
+  };
+  $('#check').onclick=function(){
+    if(finished)return;
+    if(ans.length<words.length){say('Use all the words! 🙂','bad');shake($('#line'));return}
+    var built=ans.map(function(c){return c.w}).join(' ').toLowerCase();
+    if(built===q.s.toLowerCase()){
+      say('Perfect! Evidence rebuilt! 🎉','good');award(150,$('#check'));finish();
+    }else{
+      tries++;penalty(q.id);shake($('#line'));
+      if(tries>=3){say('Here is the answer. Read it once! 👀','bad');finish()}
+      else{say('Not yet! Try again. ('+(3-tries)+' left)','bad')}
+    }
+  };
+  draw(null,true);
+}
+
+/* ---------- STAGE 5: BONUS CLUE (FREE WRITING) ---------- */
+function stage5(){
+  setStage(5);
+  view.innerHTML=
+  '<section class="panel">'+
+   '<div class="mission"><span class="badge">BONUS MISSION</span><h2>Write Your Own Clue ✍️</h2><p>Write 1 sentence about YOUR school festival. Use 1 or more phrases! (Tap a phrase to hear it.)</p></div>'+
+   '<div class="chips">'+EXPRS.map(function(e){return '<span class="tagx" role="button" tabindex="0" data-id="'+e.id+'" data-say="'+esc(e.text)+'">🔊 '+e.text+'</span>'}).join('')+'</div>'+
+   '<textarea id="txt" maxlength="200" placeholder="Example: Our class will take part in the festival."></textarea>'+
+   '<div class="msg" id="msg" aria-live="polite"></div>'+
+   '<div class="row"><button class="btn ghost" id="skip">Skip ▶</button><button class="btn ghost" id="say5">🔊 Read mine</button><button class="btn teal" id="send">Submit Clue 🔎</button></div>'+
+  '</section>';
+  $('#skip').onclick=function(){result()};
+  $('#say5').onclick=function(){
+    var t=$('#txt').value.trim();
+    if(!t){toast('Write a sentence first! 🙂');return}
+    speak(t,this);
+  };
+  $('#send').onclick=function(){
+    var t=$('#txt').value.trim(),m=$('#msg');
+    if(t.split(/\s+/).length<4){m.textContent='Write a longer sentence (4+ words). 🙂';m.className='msg bad';shake($('#txt'));return}
+    var found=EXPRS.filter(function(e){return e.re.test(t)});
+    document.querySelectorAll('.tagx').forEach(function(x){
+      if(found.some(function(e){return e.id===x.dataset.id}))x.classList.add('hit');
+    });
+    if(found.length){
+      S.score+=found.length*150;hud();burst($('#send'));float('+'+found.length*150,$('#send'));sfx('win');
+      m.textContent='Great! You used: '+found.map(function(e){return e.text}).join(', ')+' 🎉';m.className='msg good';
+    }else{
+      m.textContent='No target phrase found. Try one from the list! 💡';m.className='msg bad';sfx('bad');
+    }
+    auto(t);
+    $('#send').disabled=true;$('#txt').disabled=true;
+    $('#skip').textContent='See Results ▶';
+    $('#skip').className='btn';
+  };
+}
+
+/* ---------- RESULT ---------- */
+function result(){
+  S.end=Date.now();clearInterval(timer);
+  setStage(6);
+  var t=Math.floor((S.end-S.start)/1000);
+  var stars=S.mistakes<=3?3:S.mistakes<=8?2:1;
+  var rank=stars===3?'Chief Detective 🏅':stars===2?'Inspector 🔍':'Rookie Detective 🕵️';
+  var starHtml='';
+  for(var k=0;k<3;k++){starHtml+='<span style="animation-delay:'+(.3+k*.25)+'s">'+(k<stars?'⭐':'☆')+'</span>'}
+  var rep=EXPRS.map(function(e,i){
+    var m=S.miss[e.id],s=m===0?3:m===1?2:1;
+    return '<div style="--d:'+(.4+i*.1)+'s"><b>'+e.text+'</b>'+sp(e.text)+' <span class="s">'+'⭐'.repeat(s)+'☆'.repeat(3-s)+'</span><em>'+mark(e.ex)+' '+sp(plain(e.ex))+'</em></div>';
+  }).join('');
+  view.innerHTML=
+  '<section class="panel hero">'+
+   '<div class="trophy">🏆</div>'+
+   '<h1 style="font-size:30px" class="wave">'+wave('CASE SOLVED!')+'</h1>'+
+   '<div class="stars">'+starHtml+'</div>'+
+   '<div class="big-rank">'+rank+'</div>'+
+   '<div class="sum"><div><span id="finalScore">0</span><small>SCORE</small></div><div>x'+S.bestCombo+'<small>BEST COMBO</small></div><div>'+pad(Math.floor(t/60))+':'+pad(t%60)+'<small>TIME</small></div></div>'+
+   '<div class="mission"><p style="margin-bottom:8px">Your phrase report (⭐ = mastery). Tap 🔊 to review!</p></div>'+
+   '<div class="rep">'+rep+'</div>'+
+   '<div class="row"><button class="btn big" id="again">Play Again ↺</button></div>'+
+  '</section>';
+  sfx('win');countUp($('#finalScore'),S.score,1400);rain(36);
+  setTimeout(function(){burst($('#again'))},500);
+  $('#again').onclick=title;
+}
+
+/* ---------- INIT ---------- */
+$('#mute').onclick=function(){
+  muted=!muted;this.textContent=muted?'🔇':'🔊';
+  if(!muted)sfx('good');
+};
+$('#auto').onclick=function(){
+  autoRead=!autoRead;this.textContent=autoRead?'🗣️ ON':'🗣️ OFF';this.classList.toggle('on',autoRead);
+  if(autoRead)speak('Auto read is on.');else if(tts){try{speechSynthesis.cancel()}catch(e){}}
+};
+buildBg();
+title();
+})();
+</script>
+</body>
+</html>
